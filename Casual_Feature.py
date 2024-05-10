@@ -17,10 +17,8 @@ def asymmetric_l2_loss(u, tau, alpha=0.5):
     positive_errors = torch.relu(u)
     negative_errors = torch.relu(-u)
     loss = torch.mean(alpha * tau * positive_errors ** 2 + (1 - alpha) * (1 - tau) * negative_errors ** 2)
-    return loss  # version 5
+    return loss 
 
-
-# BatchMultihead 用于计算每个节点的表示，GAT的工作原理是，它采用节点的输入特征，并通过一系列的图注意力层产生新的节点表示，这些表示可以用于后续的任务，如节点分类、图分类等
 class BatchMultiHeadGraphAttention(nn.Module):
     def __init__(self, n_head, f_in, f_out, attn_dropout, bias=True):
         super(BatchMultiHeadGraphAttention, self).__init__()
@@ -97,7 +95,7 @@ class GAT(nn.Module):
         ]
 
     def forward(self, x):
-        x = x.unsqueeze(1) if x.dim() == 2 else x  # 如果输入数据是2D，增加一个维度
+        x = x.unsqueeze(1) if x.dim() == 2 else x 
 
         bs, n = x.size()[:2]
 
@@ -246,110 +244,3 @@ def gaussian_kernel(a, b):
     """
     squared_distance = ((a - b) ** 2).sum(-1)
     return torch.exp(-squared_distance / 2)
-
-
-def plot_radar_chart(data, labels, title="Radar Chart"):
-    """
-    Plot a radar chart for the given data.
-    :param data: List of lists containing data. Each inner list represents a data point in 6D.
-    :param labels: List of dimension names.
-    :param title: Title for the chart.
-    """
-    num_vars = len(data[0])
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    data = np.array(data)
-
-    # Repeat the first value to close the circle
-    data = np.concatenate((data, data[:, [0]]), axis=1)
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
-
-    # Draw one axe per variable
-    labels += labels[:1]
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_rlabel_position(30)
-
-    # Plot data
-    for i, d in enumerate(data):
-        ax.plot(angles, d, label=f'Sample {i + 1}')
-        ax.fill(angles, d, alpha=0.25)
-
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
-    plt.title(title)
-    plt.show()
-
-
-if __name__ == "__main__":
-
-    anomaly_data = CustomDataset('./datasets/annthyroid/processed/ar0.1_cr0.1/Da.csv')
-    a_dataloader = DataLoader(anomaly_data, batch_size=8, shuffle=True, drop_last=True)
-    unlabeled_data = CustomDataset('./datasets/annthyroid/processed/ar0.1_cr0.1/Du.csv')
-    u_dataloader = DataLoader(unlabeled_data, batch_size=32, shuffle=True)
-    train_data = CustomDataset('./datasets/annthyroid/processed/ar0.1_cr0.1/train_data.csv')
-    training_data = DataLoader(train_data, batch_size=32, shuffle=True)
-
-    gat_out_dim = 64
-    hidden_dims = [64, 32, 6]  # 64,32,6
-    model = CausalFeatureExtractor(6, gat_out_dim, hidden_dims,device='cpu')
-
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    for epoch in range(10):  # 预训练
-        for batch in u_dataloader:
-            data = batch[:, :6]
-            extracted_feature = model(data, use_casual=True)
-            extracted_feature2 = model(data, use_casual=False)
-            mmd_value = compute_mmd(extracted_feature2, extracted_feature, gaussian_kernel)
-            loss =mmd_value
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-    test_data = pd.read_csv('/datasets/annthyroid/processed/ar0.1_cr0.1_test/test_data.csv')
-    # for epoch in range(5):  # 微调
-    #     for batch in training_data:
-    #         data = batch[:, :6]
-    #         labels = batch[:, -1:]
-    #         Feature, _ = model(data, use_casual=False)
-    #         C_Feature, C_reconstructed_data = model(data, use_casual=True)
-    #         CF_simi = jaccard_similarity(Feature, C_Feature)
-    #         mmd_value = compute_mmd(data, C_reconstructed_data, gaussian_kernel)
-    #         loss = asymmetric_l2_loss((data - C_reconstructed_data), tau=0.3, alpha=0.3)
-    #
-    #         weight = (labels * 9 + 1)  # 假设异常数据的权重是10
-    #         loss = (loss * weight*weight).sum()  + mmd_value
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-    #
-    # # test
-    #
-    # # test_data = pd.read_csv('/datasets/annthyroid/processed/ar0.1_cr0.1_test/test_data.csv')
-    #
-    # labeled_anomalies = [batch[:, :6] for batch in a_dataloader]
-    # causal_features = [model(anomaly_data)[0] for anomaly_data in labeled_anomalies]
-    #
-    # average_causal_feature = torch.mean(torch.stack(causal_features), dim=0)
-    #
-    # unlabeled_features = [model(data.unsqueeze(0))[0] for batch in training_data for data in batch[:, :6]]
-    # anomaly_scores = [torch.dist(feature, average_causal_feature).item() for feature in unlabeled_features]
-    #
-    # threshold = sum(anomaly_scores) / len(anomaly_scores) + 2 * (
-    #         sum([(score - sum(anomaly_scores) / len(anomaly_scores)) ** 2 for score in anomaly_scores]) / len(
-    #     anomaly_scores)) ** 0.5
-    #
-    # # 根据阈值分配异常标签
-    # predicted_labels = [1 if score >= threshold else 0 for score in anomaly_scores]
-    # print(predicted_labels.count(1))
-    #
-    # origin_data = pd.read_csv('./datasets/annthyroid/processed/ar0.1_cr0.1/original_train_data.csv')
-    # a_data = pd.read_csv('./datasets/annthyroid/processed/ar0.1_cr0.1/Da.csv')
-    # all_labels = np.concatenate((origin_data['target'].values, a_data['label'].values))
-    #
-    # fpr, tpr, thresholds = roc_curve(all_labels[:len(anomaly_scores)], anomaly_scores)
-    # roc_auc = auc(fpr, tpr)
-    # print(roc_auc)
