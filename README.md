@@ -4,7 +4,7 @@ This repository supplements our paper:"Semi-supervised Anomaly Detection via Ada
 ## Installation
 pip install -r requirements.txt
 
-### Datasets
+## Datasets
 | Name          | D   | Class         | Size            | Data Sources                                                |
 |---------------|-----|---------------|-----------------|-------------------------------------------------------------|
 | annthyroid    | 6   | abnormal      | 534 (7.4%)      | [http://odds.cs.stonybrook.edu/annthyroid-dataset/](http://odds.cs.stonybrook.edu/annthyroid-dataset/)     |
