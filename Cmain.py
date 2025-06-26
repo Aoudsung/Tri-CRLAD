@@ -7,23 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main(args):
     task_name = args.task_name
-
-    if task_name =="Cardio":
-        data_path = './datasets/cardio/cardio_dataset/Unkonwn/cardio_0.1_0.1.csv'
-        test_data_path = './datasets/cardio/cardio_dataset/Unkonwn/test_for_all.csv'
-    elif  task_name == "HAR_multi":
-        data_path = './datasets/Har/Unknown/walking_downstairs_0.1_0.1.csv'
-        test_data_path = './datasets/Har/Unknown/test_for_all.csv'
-    elif task_name =="ANN_Multi":
-        data_path = './datasets/multi_annthyroid/Unknown/hypothyroid_0.1_60.csv'
-        test_data_path = './datasets/multi_annthyroid/Unknown/test_for_all.csv'
-    elif task_name =="Cover_type":
-        data_path = './datasets/Covertype/Cottonwood-Willow_0.02_60.csv'
-        test_data_path = './datasets/Covertype/test_for_all.csv'
-    else:
-        data_path = './datasets/annthyroid/processed/ar0.1_cr0.1/train_data.csv'
-        test_data_path = './datasets/annthyroid/processed/ar0.1_cr0.1_test/test_data.csv'
-
+    Data_Path = 'datasets/'
     training_set = pd.read_csv(data_path).values
     testing_set = pd.read_csv(test_data_path).values
 
