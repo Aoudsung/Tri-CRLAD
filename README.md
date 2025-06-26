@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 ## Run
 ```bash
-python Cmain.py --TC 6 --TH 0.8 --task_name [DATA_NAME]
+python main.py --TC 6 --TH 0.8 --task_name [DATA_NAME]
 ```
 ## Contact
 aoudsung@gmail.com
